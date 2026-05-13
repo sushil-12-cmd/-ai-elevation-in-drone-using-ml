@@ -1,298 +1,271 @@
-# AI Path Detection  in Drone Using ML
+# AI Drone Elevation and Obstacle Avoidance Using ML
 
-This project demonstrates **AI-powered drone obstacle avoidance** using machine learning. A Decision Tree Classifier predicts drone navigation decisions based on real-time sensor inputs.
-
----
-
-## 📋 Table of Contents
-
-1. [Overview](#overview)
-2. [Code Explanation](#code-explanation)
-3. [Installation](#installation)
-4. [How It Works](#how-it-works)
-5. [Output](#output)
-6. [Usage](#usage)
-
----
-
-
-## 🎯 Overview
-
-This script simulates an intelligent drone that:
-- **Detects obstacles** using three sensors (left, front, right)
-- **Makes real-time decisions** using a trained AI model
-- **Navigates autonomously** while avoiding obstacles
-- **Visualizes the complete path** taken during the flight
-
----
-
-## 📝 Code Explanation
-
-### 1. **Model Training** (Lines 1-20)
+## Complete Implementation
 
 ```python
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeClassifier
+import random
 
-X = [
+# -----------------------------------
+# TRAIN AI MODEL - OBSTACLE AVOIDANCE
+# -----------------------------------
+
+# Sensor Inputs for Obstacle Avoidance
+# [Left, Front, Right]
+
+X_obstacle = [
     [1,0,0],  # obstacle left
     [0,1,0],  # obstacle front
     [0,0,1],  # obstacle right
     [0,0,0]   # clear path
 ]
 
-y = [0,1,2,3]  # Actions: 0=Right, 1=Stop, 2=Left, 3=Forward
+# AI Actions for Obstacle Avoidance
+# 0 = Move Right
+# 1 = Stop
+# 2 = Move Left
+# 3 = Move Forward
 
-model = DecisionTreeClassifier()
-model.fit(X, y)
-```
+y_obstacle = [0,1,2,3]
 
-**What it does:**
-- Creates a **Decision Tree** machine learning model
-- Trains it on 4 sensor scenarios and their corresponding actions
-- The model learns to map sensor inputs → navigation decisions
+model_obstacle = DecisionTreeClassifier()
+model_obstacle.fit(X_obstacle, y_obstacle)
 
-**Sensor Inputs:**
-- `[1,0,0]` = Obstacle detected on the **left**
-- `[0,1,0]` = Obstacle detected **in front**
-- `[0,0,1]` = Obstacle detected on the **right**
-- `[0,0,0]` = **Clear path** ahead
+# -----------------------------------
+# TRAIN AI MODEL - ELEVATION CONTROL
+# -----------------------------------
 
-**AI Actions:**
-- `0` = Move Right (➜)
-- `1` = Stop (⛔)
-- `2` = Move Left (⬅)
-- `3` = Move Forward (⬆)
+X_elevation = [
+    [10],
+    [20],
+    [30],
+    [40],
+    [50],
+    [60],
+    [70],
+    [80]
+]
 
----
+y_elevation = [0, 0, 1, 1, 1, 2, 2, 2]
 
-### 2. **Initial Position** (Lines 22-27)
+model_elevation = DecisionTreeClassifier()
+model_elevation.fit(X_elevation, y_elevation)
 
-```python
+# -----------------------------------
+# TERRAIN AND DISTANCE DATA
+# -----------------------------------
+
+distance = np.arange(0, 20, 1)
+
+terrain_elevation = np.array([
+    10, 15, 20, 25, 30,
+    40, 50, 60, 70, 80,
+    75, 65, 55, 45, 35,
+    25, 20, 15, 10, 5
+])
+
+controlled_elevation = []
+drone_speed = 12
+safe_altitude = 15
+
+# -----------------------------------
+# START POSITION FOR OBSTACLE AVOIDANCE
+# -----------------------------------
+
 x = 0
 y_pos = 0
 
 x_points = [x]
 y_points = [y_pos]
-```
 
-**What it does:**
-- Sets the drone's starting position at coordinates **(0, 0)**
-- `x_points` stores all X-coordinates visited
-- `y_points` stores all Y-coordinates visited
-- Both lists are used for path visualization
+# -----------------------------------
+# AI PATH DETECTION - OBSTACLE AVOIDANCE
+# -----------------------------------
 
----
+print("\n----- AI DRONE OBSTACLE AVOIDANCE PATH DETECTION -----\n")
 
-### 3. **Simulation Loop** (Lines 29-65)
-
-```python
 for step in range(10):
+
     # Automatic Sensor Generation
     left = random.randint(0,1)
     front = random.randint(0,1)
     right = random.randint(0,1)
 
+    print("STEP", step+1)
+    print("Sensor Values:", left, front, right)
+
     # AI Prediction
-    prediction = model.predict([[left, front, right]])
+    prediction = model_obstacle.predict([[left, front, right]])
 
     # AI Navigation Logic
+
     if prediction[0] == 0:
         decision = "MOVE RIGHT ➜"
         x += 1
+
     elif prediction[0] == 1:
         decision = "STOP ⛔"
+
     elif prediction[0] == 2:
         decision = "MOVE LEFT ⬅"
         x -= 1
+
     else:
         decision = "MOVE FORWARD ⬆"
         y_pos += 1
 
+    print("AI Decision:", decision)
+    print()
+
     # Store Path
     x_points.append(x)
     y_points.append(y_pos)
-```
 
-**What it does:**
-- Runs for 10 time steps
-- **Generates random sensor values** (0 or 1) to simulate obstacle detection
-- **Makes an AI prediction** based on the trained model
-- **Executes the decision** and updates drone position:
-  - Right: `x += 1`
-  - Stop: No position change
-  - Left: `x -= 1`
-  - Forward: `y_pos += 1`
-- **Records the path** for visualization
+# -----------------------------------
+# AI DRONE ELEVATION CONTROL SYSTEM
+# -----------------------------------
 
----
+print("\n----- AI DRONE ELEVATION CONTROL SYSTEM -----\n")
 
-### 4. **Path Visualization** (Lines 67-106)
+for height in terrain_elevation:
 
-```python
-import matplotlib.pyplot as plt
+    prediction = model_elevation.predict([[height]])
+
+    if prediction[0] == 0:
+        decision = "INCREASE ALTITUDE"
+        new_height = height + safe_altitude
+
+    elif prediction[0] == 1:
+        decision = "MAINTAIN ALTITUDE"
+        new_height = height + 5
+
+    else:
+        decision = "DECREASE ALTITUDE"
+        new_height = height - 5
+
+    controlled_elevation.append(new_height)
+
+    print("Terrain Elevation :", height, "m")
+    print("Drone Decision    :", decision)
+    print("Drone Altitude    :", new_height, "m")
+    print("Drone Speed       :", drone_speed, "m/s")
+    print("--------------------------------------")
+
+# -----------------------------------
+# PATH VISUALIZATION - OBSTACLE AVOIDANCE
+# -----------------------------------
 
 plt.figure(figsize=(10,6))
 
-# Plot the complete path
-plt.plot(x_points, y_points, marker='o', linewidth=3, label='Drone Path')
+# Plot Drone Path
+plt.plot(
+    x_points,
+    y_points,
+    marker='o',
+    linewidth=3,
+    label='Drone Path'
+)
 
-# Add step numbers at each position
+# Add Step Numbers
 for i in range(len(x_points)):
-    plt.text(x_points[i], y_points[i], str(i), fontsize=12)
+    plt.text(
+        x_points[i],
+        y_points[i],
+        str(i),
+        fontsize=12
+    )
 
-# Mark start and end points
-plt.scatter(x_points[0], y_points[0], s=200, label='START')
-plt.scatter(x_points[-1], y_points[-1], s=200, label='END')
+# Start Point
+plt.scatter(
+    x_points[0],
+    y_points[0],
+    s=200,
+    label='START'
+)
 
-plt.title("AI Drone Path Detection")
+# End Point
+plt.scatter(
+    x_points[-1],
+    y_points[-1],
+    s=200,
+    label='END'
+)
+
+# Labels
+plt.title("AI Drone Path Detection - Obstacle Avoidance")
 plt.xlabel("X Movement")
 plt.ylabel("Y Movement")
 plt.grid(True)
 plt.legend()
 plt.show()
+
+# -----------------------------------
+# ELEVATION CONTROL VISUALIZATION
+# -----------------------------------
+
+highest_index = np.argmax(terrain_elevation)
+
+plt.figure(figsize=(14, 7))
+
+plt.plot(
+    distance,
+    terrain_elevation,
+    marker='o',
+    linewidth=3,
+    label='Terrain Elevation'
+)
+
+plt.plot(
+    distance,
+    controlled_elevation,
+    marker='s',
+    linestyle='--',
+    linewidth=3,
+    label='AI Drone Path'
+)
+
+plt.scatter(
+    distance[highest_index],
+    terrain_elevation[highest_index],
+    s=250,
+    label='Highest Terrain Point'
+)
+
+plt.title("AI Drone Elevation Control System", fontsize=18)
+plt.xlabel("Distance", fontsize=14)
+plt.ylabel("Elevation Height (m)", fontsize=14)
+plt.grid(True)
+plt.legend()
+plt.show()
 ```
 
-**What it does:**
-- Creates a matplotlib visualization
-- Plots the entire drone path as a line with markers
-- Labels each step with numbers (0-10)
-- Marks the starting position
-- Marks the ending position
-- Displays a grid and legend
+## Installation
 
----
-
-## 💻 Installation
-
-### Prerequisites
 ```bash
 pip install numpy matplotlib scikit-learn
 ```
 
-### Requirements
+## Requirements
 - Python 3.6+
 - numpy
 - matplotlib
 - scikit-learn
 
----
+## Features
 
-## 🚀 How It Works
+- **Obstacle Avoidance**: AI-powered drone navigation using sensor inputs (left, front, right)
+- **Elevation Control**: Autonomous altitude adjustment based on terrain elevation
+- **Decision Tree Classifier**: ML model for real-time decision making
+- **Path Visualization**: 2D visualization of drone path during obstacle avoidance
+- **Elevation Visualization**: Terrain and controlled elevation comparison
+- **Real-time Decisions**: Autonomous decision making at each step
 
-### Step-by-Step Process
+## Output
 
-1. **Training Phase**: The model learns 4 rules:
-   - Obstacle on left → Move right
-   - Obstacle in front → Stop
-   - Obstacle on right → Move left
-   - Clear path → Move forward
-
-2. **Simulation Phase**: For 10 steps:
-   - Generate random sensor readings
-   - Ask the AI model: "What should I do?"
-   - Execute the decision
-   - Record the position
-
-3. **Visualization Phase**: Plot the complete path showing:
-   - Drone trajectory
-   - All waypoints numbered
-   - Start and end positions
-
----
-
-## 📊 Output
-
-### Console Output Example
-
-```
------ AI DRONE PATH DETECTION -----
-
-STEP 1
-Sensor Values: 1 0 0
-AI Decision: MOVE RIGHT ➜
-
-STEP 2
-Sensor Values: 0 1 0
-AI Decision: STOP ⛔
-
-STEP 3
-Sensor Values: 0 0 1
-AI Decision: MOVE LEFT ⬅
-
-STEP 4
-Sensor Values: 0 0 0
-AI Decision: MOVE FORWARD ⬆
-
-STEP 5
-Sensor Values: 1 0 0
-AI Decision: MOVE RIGHT ➜
-
-... (continues for 10 steps)
-```
-
-### Graph Output
-
-A 2D scatter plot showing:
-- **Drone path** (blue line with circles)
-- **Step numbers** (0-10) at each point
-- **START point** (green marker)
-- **END point** (orange marker)
-- **Grid** for reference
-
----
-
-## 🎮 Usage
-
-### Run the Script
-
-```bash
-python drone_obstacle_avoidance.py
-```
-
-### Output
-1. Prints step-by-step sensor readings and AI decisions to console
-2. Displays an interactive matplotlib graph
-3. Shows complete drone path with waypoints
-
----
-
-## 🔧 Technical Details
-
-| Component | Details |
-|-----------|---------|
-| **Algorithm** | Decision Tree Classifier |
-| **Input Features** | 3 sensors (left, front, right) |
-| **Output Classes** | 4 actions (right, stop, left, forward) |
-| **Simulation Steps** | 10 timesteps |
-| **Sensor Values** | Binary (0=No obstacle, 1=Obstacle) |
-
----
-
-## 📌 Key Concepts
-
-### Why Decision Trees?
-- **Fast prediction** for real-time drone control
-- **Interpretable** decisions based on sensor data
-- **Efficient** for small datasets
-- **Suitable** for autonomous navigation
-
-### Real-World Applications
-- Drone obstacle avoidance systems
-- Autonomous vehicle navigation
-- Robot path planning
-- Mobile obstacle detection
-
----
-
-## 📖 References
-
-- [scikit-learn Decision Tree](https://scikit-learn.org/stable/modules/tree.html)
-- [Matplotlib Visualization](https://matplotlib.org/)
-- [NumPy Array Operations](https://numpy.org/)
-
----
-
-## 🤝 Contributing
-
-Feel free to contribute improvements to this project!
-
+The script generates:
+1. Console output showing step-by-step decisions for obstacle avoidance
+2. Console output showing elevation control decisions for terrain navigation
+3. 2D scatter plot of drone path avoiding obstacles
+4. 2D line plot comparing terrain elevation vs AI-controlled drone elevation
