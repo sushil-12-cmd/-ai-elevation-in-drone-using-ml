@@ -1,4 +1,4 @@
-# AI Elevation in Drone Using ML
+# AI Path Detection  in Drone Using ML
 
 This project demonstrates **AI-powered drone obstacle avoidance** using machine learning. A Decision Tree Classifier predicts drone navigation decisions based on real-time sensor inputs.
 
