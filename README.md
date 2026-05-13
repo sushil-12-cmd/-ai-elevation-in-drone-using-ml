@@ -15,6 +15,7 @@ This project demonstrates **AI-powered drone obstacle avoidance** using machine 
 
 ---
 
+
 ## 🎯 Overview
 
 This script simulates an intelligent drone that:
